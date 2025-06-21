@@ -1,0 +1,20 @@
+timestamp,current_url,site_category,time_on_site,recommendation,message,encouragement_count,warning_count,intervention_count
+2025-06-21 16:37:57,,,0,continue_monitoring,,0,0,0
+2025-06-21 16:38:30,https://www.youtube.com/results?search_query=tinder,inappropriate,0.0,intervene,Inappropriate content detected: inappropriate keyword 'tinder' in URL. Redirecting to educational content.,0,0,1
+2025-06-21 16:39:00,https://www.khanacademy.org/,educational,0.0,continue_monitoring,,0,0,1
+2025-06-21 16:39:30,https://www.khanacademy.org/,educational,30.009505,encourage,Great work! You've been studying for 0 minutes. Keep up the excellent effort!,1,0,1
+2025-06-21 16:40:00,https://www.khanacademy.org/,educational,60.034884,encourage,Great work! You've been studying for 1 minutes. Keep up the excellent effort!,2,0,1
+2025-06-21 16:40:30,https://www.khanacademy.org/,educational,90.055134,encourage,Great work! You've been studying for 1 minutes. Keep up the excellent effort!,3,0,1
+2025-06-21 16:42:16,https://www.khanacademy.org/,educational,0.0,continue_monitoring,,0,0,0
+2025-06-21 16:42:50,https://www.google.com/search?client=firefox-b-d&q=tinder,inappropriate,0.0,intervene,Inappropriate content detected: inappropriate keyword 'tinder' in URL. Redirecting to educational content.,0,0,1
+2025-06-21 16:43:24,https://www.youtube.com/results?search_query=violence,inappropriate,0.0,intervene,Inappropriate content detected: inappropriate keyword 'violence' in URL. Redirecting to educational content.,0,0,2
+2025-06-21 16:43:54,https://www.khanacademy.org/,educational,0.0,continue_monitoring,,0,0,2
+2025-06-21 16:44:24,https://www.khanacademy.org/,educational,30.014396,encourage,Great work! You've been studying for 0 minutes. Keep up the excellent effort!,1,0,2
+2025-06-21 16:44:54,https://www.youtube.com/watch?v=5cHl65YjB3U,distracting,0.0,continue_monitoring,,1,0,2
+2025-06-21 16:45:24,https://www.youtube.com/watch?v=5cHl65YjB3U,distracting,30.014224,warn,You've been on this site for 0 minutes. Consider getting back to your studies.,1,1,2
+2025-06-21 16:45:54,https://www.youtube.com/watch?v=5cHl65YjB3U,distracting,60.057301,warn,You've been on this site for 1 minutes. Consider getting back to your studies.,1,2,2
+2025-06-21 16:46:24,https://www.youtube.com/watch?v=5cHl65YjB3U,distracting,90.101248,warn,You've been on this site for 1 minutes. Consider getting back to your studies.,1,3,2
+2025-06-21 16:46:54,https://www.youtube.com/watch?v=5cHl65YjB3U,distracting,120.139486,warn,You've been on this site for 2 minutes. Consider getting back to your studies.,1,4,2
+2025-06-21 16:47:24,https://www.youtube.com/watch?v=5cHl65YjB3U,distracting,150.21169,warn,You've been on this site for 2 minutes. Consider getting back to your studies.,1,5,2
+2025-06-21 16:47:59,https://www.youtube.com/watch?v=J75GuCvhLAE,inappropriate,0.0,intervene,Inappropriate content detected: inappropriate keyword 'kill' in page content. Redirecting to educational content.,1,5,3
+2025-06-21 16:48:29,https://www.khanacademy.org/,educational,0.0,continue_monitoring,,1,5,3
