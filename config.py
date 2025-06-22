@@ -13,6 +13,9 @@ load_dotenv()
 # OpenAI Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
+# Gemini API Key for reporting
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+
 # LMNT Configuration (speech synthesis)
 LMNT_API_KEY = os.getenv("LMNT_API_KEY", "ak_GkxGopYg9FwhJaQkJ9huMC")
 
@@ -51,6 +54,7 @@ def get_config_summary():
     """Get a summary of current configuration"""
     return {
         "openai_api_key": "Set" if OPENAI_API_KEY else "Not Set",
+        "gemini_api_key": "Set" if GEMINI_API_KEY else "Not Set",
         "lmnt_api_key": "Set" if LMNT_API_KEY else "Using Default",
         "browser_interval": BROWSER_INTERVAL,
         "ai_interval": AI_INTERVAL,

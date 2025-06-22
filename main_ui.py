@@ -5,7 +5,7 @@ Just a button to run the monitoring system
 """
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 import subprocess
 import sys
 import os
@@ -134,35 +134,78 @@ class SimpleStudentMonitorGUI:
             unlock_button.pack(pady=5)
 
         
-        # Timer Display - now in column 1
-        timer_canvas = tk.Canvas(main_frame, bg="white", highlightthickness=0, width=250, height=200)
-        timer_canvas.grid(row=0, column=2, pady=5, sticky="w")
+        report_frame = ttk.Frame(main_frame, style="White.TFrame")
+        report_frame.grid(row=0, column=2, pady=5, sticky="")
         
-        # Create rounded rectangle with taller height using arcs and lines
-        radius = 15
-        x1, y1, x2, y2 = 5, 5, 245, 195
-        
-        # Draw the rounded rectangle
-        timer_canvas.create_arc(x1, y1, x1 + 2*radius, y1 + 2*radius, start=90, extent=90, outline=BLUE_COLOR, width=3, fill="white")
-        timer_canvas.create_arc(x2 - 2*radius, y1, x2, y1 + 2*radius, start=0, extent=90, outline=BLUE_COLOR, width=3, fill="white")
-        timer_canvas.create_arc(x1, y2 - 2*radius, x1 + 2*radius, y2, start=180, extent=90, outline=BLUE_COLOR, width=3, fill="white")
-        timer_canvas.create_arc(x2 - 2*radius, y2 - 2*radius, x2, y2, start=270, extent=90, outline=BLUE_COLOR, width=3, fill="white")
-        
-        # Draw the straight lines
-        timer_canvas.create_line(x1 + radius, y1, x2 - radius, y1, fill=BLUE_COLOR, width=3)
-        timer_canvas.create_line(x1 + radius, y2, x2 - radius, y2, fill=BLUE_COLOR, width=3)
-        timer_canvas.create_line(x1, y1 + radius, x1, y2 - radius, fill=BLUE_COLOR, width=3)
-        timer_canvas.create_line(x2, y1 + radius, x2, y2 - radius, fill=BLUE_COLOR, width=3)
+        try:
+            report_icon_path = os.path.join(ASSETS_DIR, "report.png")
+            print(f"Attempting to load report icon from: {report_icon_path}") # DEBUG
+            with Image.open(report_icon_path) as img:
+                print("Report image opened successfully with Pillow.") # DEBUG
+                w, h = img.size
+                img_resized = img.resize((w // 3, h // 3), Image.Resampling.LANCZOS)
+                self.report_image = ImageTk.PhotoImage(img_resized)
+                print("Report ImageTk.PhotoImage created successfully.") # DEBUG
 
-        timer_mins_label = ttk.Label(timer_canvas, text="37", font=(FONT_NAME, 50, "bold"), style="Blue.TLabel")
-        timer_mins_label.place(relx=0.5, rely=0.3, anchor="center")
-
-        timer_text_label = ttk.Label(timer_canvas, text="mins", font=(FONT_NAME, 30, "bold"), style="Blue.TLabel")
-        timer_text_label.place(relx=0.5, rely=0.6, anchor="center")
-
-        timer_break_label = ttk.Label(timer_canvas, text="since last break", font=(FONT_NAME, 15), style="Blue.TLabel")
-        timer_break_label.place(relx=0.5, rely=0.85, anchor="center")
+            report_button = tk.Button(report_frame, image=self.report_image, command=self.generate_and_save_report, borderwidth=0, bg="white", activebackground="white", cursor="hand2")
+            report_button.image = self.report_image # Keep a reference!
+            report_button.pack(pady=5)
+            print("Report button created and packed.") # DEBUG
+        except (FileNotFoundError, IOError) as e:
+            print(f"ERROR loading report icon: {e}") # DEBUG
+            report_button = ttk.Button(report_frame, text="report 📊", command=self.generate_and_save_report, style="Blue.TButton", takefocus=False)
+            report_button.pack(pady=5)
         
+    def generate_and_save_report(self):
+        """Generate the report and open a save dialog for the user."""
+        try:
+            # Step 1: Run generate_report.py
+            messagebox.showinfo("Generating Report", "The parent report is being generated. This may take a moment...")
+            
+            # Use subprocess to run the script, hiding the console window on Windows
+            process = subprocess.run(
+                [sys.executable, "generate_report.py"],
+                capture_output=True,
+                text=True,
+                check=True,
+                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+            )
+            
+            # Optional: print output for debugging
+            print(process.stdout)
+            if process.stderr:
+                print(process.stderr)
+
+            # Step 2: Check if parent_report.txt was created
+            report_path = os.path.join(BASE_DIR, "parent_report.txt")
+            if not os.path.exists(report_path):
+                messagebox.showerror("Error", "Report file ('parent_report.txt') was not found after generation.")
+                return
+
+            # Step 3: Open a "Save As" dialog
+            save_path = filedialog.asksaveasfilename(
+                initialdir=os.path.expanduser("~"), # Start in user's home directory
+                title="Save Parent Report As...",
+                defaultextension=".txt",
+                filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")]
+            )
+
+            if not save_path:
+                # User cancelled the save dialog
+                return
+
+            # Step 4: Copy the report to the selected location
+            with open(report_path, "r", encoding="utf-8") as source_file:
+                with open(save_path, "w", encoding="utf-8") as dest_file:
+                    dest_file.write(source_file.read())
+            
+            messagebox.showinfo("Success", f"Report saved successfully to:\n{save_path}")
+
+        except subprocess.CalledProcessError as e:
+            messagebox.showerror("Error", f"Failed to generate report:\n{e.stderr}")
+        except Exception as e:
+            messagebox.showerror("Error", f"An unexpected error occurred:\n{e}")
+
     def start_monitoring(self):
         """Start both the student monitoring system and emotion detection"""
         if not validate_config():
