@@ -21,7 +21,7 @@ LMNT_API_KEY = os.getenv("LMNT_API_KEY", "ak_GkxGopYg9FwhJaQkJ9huMC")
 
 # Monitoring Intervals
 BROWSER_INTERVAL = int(os.getenv("BROWSER_INTERVAL", "5"))
-AI_INTERVAL = int(os.getenv("AI_INTERVAL", "15"))
+AI_INTERVAL = int(os.getenv("AI_INTERVAL", "8"))
 
 # Speech Configuration
 SPEECH_ENABLED = os.getenv("SPEECH_ENABLED", "true").lower() == "true"

@@ -25,6 +25,10 @@ lmnt==0.1.0
 python-dotenv==1.0.0
 requests==2.31.0
 
+# PDF Generation
+fpdf2==2.7.8
+Markdown==3.6
+
 # Base64 encoding (built-in, but listing for reference)
 # base64 - built into Python
 

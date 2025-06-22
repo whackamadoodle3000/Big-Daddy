@@ -176,28 +176,27 @@ class SimpleStudentMonitorGUI:
             if process.stderr:
                 print(process.stderr)
 
-            # Step 2: Check if parent_report.txt was created
-            report_path = os.path.join(BASE_DIR, "parent_report.txt")
+            # Step 2: Check if parent_report.pdf was created
+            report_path = os.path.join(BASE_DIR, "parent_report.pdf")
             if not os.path.exists(report_path):
-                messagebox.showerror("Error", "Report file ('parent_report.txt') was not found after generation.")
+                messagebox.showerror("Error", "Report file ('parent_report.pdf') was not found after generation.")
                 return
 
             # Step 3: Open a "Save As" dialog
             save_path = filedialog.asksaveasfilename(
                 initialdir=os.path.expanduser("~"), # Start in user's home directory
                 title="Save Parent Report As...",
-                defaultextension=".txt",
-                filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")]
+                defaultextension=".pdf",
+                filetypes=[("PDF Files", "*.pdf"), ("All Files", "*.*")]
             )
 
             if not save_path:
                 # User cancelled the save dialog
                 return
 
-            # Step 4: Copy the report to the selected location
-            with open(report_path, "r", encoding="utf-8") as source_file:
-                with open(save_path, "w", encoding="utf-8") as dest_file:
-                    dest_file.write(source_file.read())
+            # Step 4: Copy the PDF report to the selected location
+            import shutil
+            shutil.copy2(report_path, save_path)
             
             messagebox.showinfo("Success", f"Report saved successfully to:\n{save_path}")
 

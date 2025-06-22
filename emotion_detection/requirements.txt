@@ -1,5 +1,5 @@
 opencv-python>=4.8.0
-mediapipe>=0.10.0
+mediapipe==0.10.13
 tensorflow>=2.13.0
 numpy>=1.21.0
 Pillow>=9.0.0

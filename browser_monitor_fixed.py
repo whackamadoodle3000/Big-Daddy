@@ -391,7 +391,7 @@ class BrowserMonitor:
             print(f"Error closing tab: {e}")
             return False
     
-    def show_notification(self, message, duration=5):
+    def show_notification(self, message, duration=10):
         """Show a notification in the browser with better compatibility"""
         if not self.driver:
             return False

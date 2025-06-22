@@ -628,8 +628,10 @@ class SmartStudentAIAgent:
             
         # Wait for the AI-determined timeout before taking action
         if timeout > 0:
-            print(f"AI recommends waiting {timeout} seconds before action (urgency: {urgency})")
-            time.sleep(timeout)
+            # Reduce maximum timeout for faster response
+            actual_timeout = min(timeout, 3)  # Cap at 3 seconds max
+            print(f"AI recommends waiting {actual_timeout} seconds before action (urgency: {urgency})")
+            time.sleep(actual_timeout)
         
         # Check if speech feedback should be given
         speech_given = False
@@ -698,7 +700,7 @@ class SmartStudentAIAgent:
             print(f"Encouragement: {message}")
             return True
             
-        return self.browser_monitor.show_notification(f"🎉 {message}", duration=3)
+        return self.browser_monitor.show_notification(f"🎉 {message}", duration=6)
     
     def show_warning(self, message: str) -> bool:
         """Show warning message to student"""
@@ -706,7 +708,7 @@ class SmartStudentAIAgent:
             print(f"Warning: {message}")
             return True
             
-        return self.browser_monitor.show_notification(f"⚠️ {message}", duration=5)
+        return self.browser_monitor.show_notification(f"⚠️ {message}", duration=8)
     
     def perform_intervention(self, analysis: Dict[str, Any]) -> bool:
         """Perform intervention by redirecting to educational content"""
@@ -716,8 +718,8 @@ class SmartStudentAIAgent:
         
         try:
             # Show immediate notification
-            message = analysis.get('message', 'Redirecting to educational content for better learning')
-            self.browser_monitor.show_notification(f"🚨 {message}", duration=3)
+            message = analysis.get('message', 'Redirecting to educational content for better learning. Focus on sites for younger children such as iXL or Khan Academy')
+            self.browser_monitor.show_notification(f"🚨 {message}", duration=6)
             
             # Wait a moment for notification to be seen
             time.sleep(2)
@@ -766,7 +768,7 @@ class SmartStudentAIAgent:
             Recent search query: {search_query}
             
             Suggest ONE educational website URL that would be appropriate for a student.
-            Consider their apparent interests but redirect to educational content.
+            Consider their apparent interests but redirect to educational content. This content should be focused on sites for younger children such as iXL or Khan Academy.
             
             Respond with only the URL, nothing else.
             Example: https://www.khanacademy.org/math
