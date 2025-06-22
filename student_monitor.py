@@ -11,6 +11,8 @@ import time
 import threading
 import argparse
 from datetime import datetime
+import ast
+import asyncio
 
 # Import configuration
 from config import (
@@ -40,6 +42,41 @@ class SmartStudentMonitor:
         self.browser_interval = BROWSER_INTERVAL
         self.ai_interval = AI_INTERVAL
         
+    def get_last_emotion_log(self):
+        """Reads the last entry from emotionLog.txt and parses it."""
+        try:
+            with open("emotionLog.txt", "r") as f:
+                lines = f.readlines()
+                if not lines:
+                    return None
+                last_line = lines[-1].strip()
+                
+                # The format is "YYYY-MM-DD HH:MM:SS angry:X disgust:Y ..."
+                # We want to extract the emotion key-value pairs
+                parts = last_line.split()
+                if len(parts) < 3: # Should have at least timestamp (date and time) and one emotion
+                    return None
+                    
+                # Emotion data starts after the timestamp
+                emotion_data = parts[2:]
+                
+                emotions = {}
+                for item in emotion_data:
+                    try:
+                        key, value = item.split(':')
+                        emotions[key] = float(value)
+                    except ValueError:
+                        # Handle potential malformed key:value pairs
+                        continue
+                return emotions
+
+        except FileNotFoundError:
+            print("⚠️ emotionLog.txt not found. Emotion analysis will be skipped.")
+            return None
+        except Exception as e:
+            print(f"⚠️ Error parsing emotionLog.txt: {e}")
+            return None
+
     def initialize_components(self):
         """Initialize browser monitor and AI agent"""
         try:
@@ -94,11 +131,73 @@ class SmartStudentMonitor:
                     try:
                         # Get recent activity
                         recent_activity = self.ai_agent.get_recent_activity(minutes=10)
-                        
                         if recent_activity:
                             # Perform AI analysis (using fast mode by default)
                             analysis = self.ai_agent.analyze_student_behavior(recent_activity, use_fast_mode=True)
                             
+                            # Emotion-based analysis override
+                            emotions = self.get_last_emotion_log()
+                            if emotions:
+                                pattern_analysis = analysis.get('pattern_analysis', {})
+                                educational_ratio = pattern_analysis.get('educational_ratio', 0.5)
+
+                                is_educational = educational_ratio > 0.5
+                                is_entertainment = educational_ratio < 0.5
+                                happy = emotions.get('happy', 0)
+                                negative_emotions = emotions.get('anger', 0) + emotions.get('sad', 0) + emotions.get('disgust', 0)
+
+                                emotion_triggered = False
+                                if happy > 1000 and is_educational:
+                                    analysis['recommendation'] = 'encourage'
+                                    analysis['message'] = self.ai_agent.generate_emotion_based_message(emotions, 'encourage', 'educational', recent_activity)
+                                    analysis['reasoning'] = "High happiness detected while on an educational page."
+                                    analysis['urgency'] = "low"
+                                    analysis['emotion'] = True
+                                    emotion_triggered = True
+                                elif happy > 500 and is_entertainment:
+                                    analysis['recommendation'] = 'intervene'
+                                    analysis['message'] = self.ai_agent.generate_emotion_based_message(emotions, 'intervene', 'entertainment', recent_activity)
+                                    analysis['reasoning'] = "High happiness detected on an entertainment page. Redirecting to maintain productivity."
+                                    analysis['urgency'] = "medium"
+                                    analysis['emotion'] = True
+                                    emotion_triggered = True
+                                elif negative_emotions > 500 and is_educational:
+                                    analysis['recommendation'] = 'warn'
+                                    analysis['message'] = self.ai_agent.generate_emotion_based_message(emotions, 'warn', 'educational', recent_activity)
+                                    analysis['reasoning'] = "High negative emotions on an educational page. Offering a different resource."
+                                    analysis['urgency'] = "high"
+                                    analysis['emotion'] = True
+                                    emotion_triggered = True
+                                elif negative_emotions > 500 and is_entertainment:
+                                    analysis['recommendation'] = 'warn'
+                                    analysis['message'] = self.ai_agent.generate_emotion_based_message(emotions, 'warn', 'entertainment', recent_activity)
+                                    analysis['reasoning'] = "High negative emotions on an entertainment page. Suggesting a break."
+                                    analysis['urgency'] = "high"
+                                    analysis['emotion'] = True
+                                    emotion_triggered = True
+                                elif happy > 500:
+                                    analysis['recommendation'] = 'warn'
+                                    analysis['message'] = self.ai_agent.generate_emotion_based_message(emotions, 'warn', 'general', recent_activity)
+                                    analysis['reasoning'] = "Test Message"
+                                    analysis['urgency'] = "low"
+                                    analysis['emotion'] = True
+                                    emotion_triggered = True
+                                
+                                if emotion_triggered:
+                                    analysis['fast_mode'] = False # Ensure we can show messages
+                                    # Give verbal feedback for emotion-triggered events
+                                    if self.ai_agent.speech_enabled:
+                                        # Run the async speech function in the current thread's event loop
+                                        try:
+                                            loop = asyncio.get_event_loop()
+                                        except RuntimeError:
+                                            loop = asyncio.new_event_loop()
+                                            asyncio.set_event_loop(loop)
+                                        
+                                        # Use the message from the analysis for speech
+                                        speech_analysis = analysis.copy()
+                                        loop.run_until_complete(self.ai_agent.give_speech_feedback(speech_analysis))
+
                             # Save analysis to log
                             self.ai_agent.save_analysis_log(analysis)
                             
@@ -112,6 +211,7 @@ class SmartStudentMonitor:
                                 print(f"⏱️ Timeout: {analysis.get('timeout', 0)}s")
                                 print(f"🔍 Reasoning: {analysis.get('reasoning', 'N/A')}")
                                 print(f"⚡ Urgency: {analysis.get('urgency', 'medium')}")
+                                print(f"💭 Emotion: {analysis.get('emotion', 'N/A')}")
                                 
                                 # Show screenshot analysis if available and not in fast mode
                                 screenshot_analysis = analysis.get('screenshot_analysis', {})
@@ -321,6 +421,7 @@ def main():
                 print(f"Message: {analysis.get('message', 'N/A')}")
                 print(f"Reasoning: {analysis.get('reasoning', 'N/A')}")
                 print(f"Urgency: {analysis.get('urgency', 'N/A')}")
+                print(f"Emotion: {analysis.get('emotion', 'N/A')}")
                 
                 # Show detailed analysis
                 screenshot_analysis = analysis.get('screenshot_analysis', {})

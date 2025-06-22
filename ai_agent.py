@@ -374,7 +374,8 @@ class SmartStudentAIAgent:
                 'timeout': 0,  # Immediate intervention
                 'message': f"Inappropriate content detected. Redirecting to educational resources.",
                 'reasoning': f"Detected: {inappropriate_content}",
-                'urgency': 'high'
+                'urgency': 'high',
+                'emotion': False
             }
         
         # Use AI to make nuanced decision
@@ -401,6 +402,7 @@ class SmartStudentAIAgent:
             "message": "<brief, personalized message for the student>",
             "reasoning": "<brief explanation of your decision>",
             "urgency": "low|medium|high"
+            "emotion": <just fill this with False>
         }}
         
         IMPORTANT - Keep timeouts SHORT for faster responses:
@@ -441,7 +443,8 @@ class SmartStudentAIAgent:
                 'timeout': 5,  # Reduced from 60
                 'message': "Great job staying focused on your studies!",
                 'reasoning': "High educational value detected",
-                'urgency': 'low'
+                'urgency': 'low',
+                'emotion': False
             }
         elif distraction_level >= 7 or time_on_site > 300:
             return {
@@ -449,7 +452,8 @@ class SmartStudentAIAgent:
                 'timeout': 3,  # Reduced from 15
                 'message': "Let's get back to your studies. I'll help you find some educational content.",
                 'reasoning': "High distraction or long time off-task",
-                'urgency': 'high'
+                'urgency': 'high',
+                'emotion': False
             }
         else:
             return {
@@ -457,7 +461,8 @@ class SmartStudentAIAgent:
                 'timeout': 8,  # Reduced from 30
                 'message': "Remember to stay focused on your learning goals!",
                 'reasoning': "Moderate distraction detected",
-                'urgency': 'medium'
+                'urgency': 'medium',
+                'emotion': False
             }
     
     def get_recent_activity(self, minutes: int = 10) -> List[Dict]:
@@ -535,6 +540,7 @@ class SmartStudentAIAgent:
                     'message': decision['message'],
                     'reasoning': decision.get('reasoning', ''),
                     'urgency': decision.get('urgency', 'medium'),
+                    'emotion': decision.get('emotion', False),
                     'ai_enhanced': False,
                     'fast_mode': True
                 }
@@ -561,6 +567,7 @@ class SmartStudentAIAgent:
             'message': decision['message'],
             'reasoning': decision.get('reasoning', ''),
             'urgency': decision.get('urgency', 'medium'),
+            'emotion': decision.get('emotion', False),
             'ai_enhanced': True,
             'fast_mode': False
         }
@@ -614,6 +621,7 @@ class SmartStudentAIAgent:
         message = analysis.get('message', '')
         timeout = analysis.get('timeout', 30)
         urgency = analysis.get('urgency', 'medium')
+        emotion = analysis.get('emotion', False)
         
         if recommendation == 'continue_monitoring':
             return True
@@ -665,6 +673,7 @@ class SmartStudentAIAgent:
                 return success
                 
             elif recommendation == 'intervene':
+                print("trigger intervention")
                 self.student_activity['intervention_count'] += 1
                 success = self.perform_intervention(analysis)
                 if success:
@@ -832,6 +841,7 @@ class SmartStudentAIAgent:
                 'message': analysis.get('message', ''),
                 'reasoning': analysis.get('reasoning', ''),
                 'urgency': analysis.get('urgency', 'medium'),
+                'emotion': analysis.get('emotion', False),
                 'ai_enhanced': analysis.get('ai_enhanced', False),
                 'screenshot_analysis': json.dumps(analysis.get('screenshot_analysis', {})),
                 'pattern_analysis': json.dumps(analysis.get('pattern_analysis', {})),
@@ -868,7 +878,8 @@ class SmartStudentAIAgent:
                 'timeout': 0,  # Immediate intervention
                 'message': f"Inappropriate content detected. Redirecting to educational resources.",
                 'reasoning': f"Detected: {inappropriate_content}",
-                'urgency': 'high'
+                'urgency': 'high',
+                'emotion': False
             }
         
         # Quick rule-based decisions for clean content
@@ -881,7 +892,8 @@ class SmartStudentAIAgent:
                 'timeout': 5,  # Much faster
                 'message': "Great choice! Keep up the focused learning!",
                 'reasoning': "Educational site detected",
-                'urgency': 'low'
+                'urgency': 'low',
+                'emotion': False
             }
         
         # Distracting sites - quick warning (only if no inappropriate content)
@@ -892,7 +904,8 @@ class SmartStudentAIAgent:
                     'timeout': 5,
                     'message': "Time to refocus! Let's get back to productive learning.",
                     'reasoning': "Extended time on distracting site",
-                    'urgency': 'medium'
+                    'urgency': 'medium',
+                    'emotion': False
                 }
             else:
                 return {
@@ -900,7 +913,8 @@ class SmartStudentAIAgent:
                     'timeout': 10,
                     'message': "Remember to stay focused on your learning goals!",
                     'reasoning': "Distracting site detected",
-                    'urgency': 'medium'
+                    'urgency': 'medium',
+                    'emotion': False
                 }
         
         # Default - continue monitoring with minimal delay
@@ -909,7 +923,8 @@ class SmartStudentAIAgent:
             'timeout': 0,
             'message': "",
             'reasoning': "Normal browsing activity",
-            'urgency': 'low'
+            'urgency': 'low',
+            'emotion': False
         }
 
     async def synthesize_speech(self, text: str) -> bytes:
@@ -1065,7 +1080,11 @@ class SmartStudentAIAgent:
         recommendation = analysis.get('recommendation', '')
         urgency = analysis.get('urgency', 'medium')
         reasoning = analysis.get('reasoning', '').lower()
-        
+        emotion = analysis.get('emotion', '')
+        #If emotion, speak
+        if emotion:
+            print("Emotion is true")
+            return True
         # Always speak for high urgency interventions (inappropriate content) - OVERRIDE COOLDOWN
         if recommendation == 'intervene' and urgency == 'high':
             print("🗣️ High urgency intervention - speech feedback ENABLED (cooldown bypassed)")
@@ -1141,6 +1160,7 @@ class SmartStudentAIAgent:
             pattern_analysis = analysis.get('pattern_analysis', {})
             reasoning = analysis.get('reasoning', '')
             urgency = analysis.get('urgency', 'medium')
+            emotion = analysis.get('emotion', False)
             message = analysis.get('message', '')
             
             # Determine what specific issue we're addressing
@@ -1378,6 +1398,68 @@ class SmartStudentAIAgent:
             print(f"❌ Speech feedback error: {e}")
             return False
 
+    def generate_emotion_based_message(self, emotions: Dict, recommendation: str, context_type: str, recent_activity: List[Dict]) -> str:
+        """Generates a dynamic, supportive message based on detected emotions and context."""
+        
+        primary_emotion = "neutral"
+        if emotions:
+            active_emotions = {k: v for k, v in emotions.items() if k != 'neutral' and v > 0}
+            if active_emotions:
+                primary_emotion = max(active_emotions, key=active_emotions.get)
+
+        intent_map = {
+            'encourage': f"give positive reinforcement. The student seems happy and is on a '{context_type}' page.",
+            'intervene': f"gently redirect the student to a productive task. They seem happy but are on an '{context_type}' page, and we want to channel that energy.",
+            'warn': {
+                'educational': f"suggest a different educational resource. The student seems to be feeling '{primary_emotion}' with the current one.",
+                'entertainment': f"gently suggest taking a break. The student seems to be feeling '{primary_emotion}' while on an '{context_type}' page.",
+                'general': f"provide a gentle, encouraging nudge. The student seems to be feeling '{primary_emotion}'."
+            }
+        }
+        
+        if recommendation == 'warn':
+            intent = intent_map['warn'][context_type]
+        else:
+            intent = intent_map.get(recommendation, "provide a general notification.")
+
+        current_activity = recent_activity[-1] if recent_activity else {}
+        current_url = current_activity.get('url', 'an unknown page')
+        current_title = current_activity.get('page_title', 'an unknown page')
+
+        history_summary = "The user has just started their session."
+        if len(recent_activity) > 1:
+            previous_sites = list(set(urlparse(act['url']).netloc for act in recent_activity[:-1]))
+            if previous_sites:
+                history_summary = f"They were previously looking at sites like: {', '.join(previous_sites[:2])}."
+
+        prompt = f"""
+        You are an AI study assistant. Your goal is to support a student by providing a gentle, positive, and helpful message based on their emotional state and browsing activity.
+
+        CONTEXT:
+        - Student's primary emotion: '{primary_emotion}'
+        - Current page title: "{current_title}"
+        - Current URL: {current_url}
+        - Recent history: {history_summary}
+        - Your goal is to: {intent}
+
+        INSTRUCTIONS:
+        Generate a single, brief, and supportive sentence. The message must clearly and kindly state that you're taking an action *because* of the emotion you've detected, while also referencing their current activity. Do not use quotes in your response.
+
+        Example for 'happy' on an educational page: "It's great to see you're so happy while working on '{current_title}'! Keep up the fantastic work."
+        Example for 'angry' on an educational page: "I sense some frustration while you're on '{current_title}'. Because of that, I'm finding a different resource that might explain this in a new way."
+        Example for 'sad' on an entertainment page: "You seem a bit down right now. Because of this, I'm suggesting a short break from '{current_title}' to relax for a moment."
+
+        Generate the message now.
+        """
+
+        try:
+            response = self.text_llm.invoke([HumanMessage(content=prompt)])
+            message = response.content.strip().replace('"', '')
+            return message
+        except Exception as e:
+            print(f"Error generating emotion-based message: {e}")
+            return "Let's make sure we're staying on track!"
+
 
 def main():
     parser = argparse.ArgumentParser(description="Smart AI Agent for Student Browser Monitoring")
@@ -1411,6 +1493,7 @@ def main():
                 print(f"Message: {analysis.get('message', 'N/A')}")
                 print(f"Reasoning: {analysis.get('reasoning', 'N/A')}")
                 print(f"Urgency: {analysis.get('urgency', 'N/A')}")
+                print(f"Emotion: {analysis.get('emotion', 'N/A')}")
                 
                 # Show screenshot analysis if available
                 screenshot_analysis = analysis.get('screenshot_analysis', {})

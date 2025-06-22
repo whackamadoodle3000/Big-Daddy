@@ -95,11 +95,11 @@ class DebugEmotionDetector:
         
         # Debug: Print time difference
         time_diff = current_time - self.last_record_time
-        print(f"DEBUG: Time since last record: {time_diff:.1f}s (need 3.0s)")
+        #print(f"DEBUG: Time since last record: {time_diff:.1f}s (need 3.0s)")
         
         # Check if 3 seconds have passed
         if current_time - self.last_record_time >= 3.0:
-            print(f"DEBUG: 3 seconds passed! Recording emotion data...")
+            #print(f"DEBUG: 3 seconds passed! Recording emotion data...")
             
             # Calculate emotion presence times for ALL emotions in the current window
             emotion_counts = defaultdict(int)
@@ -119,7 +119,7 @@ class DebugEmotionDetector:
                 self.calculate_emotion_score()
                 
                 # Log to emotionLog.txt
-                print(f"DEBUG: Calling log_emotion_scores...")
+                #print(f"DEBUG: Calling log_emotion_scores...")
                 self.log_emotion_scores()
                 
                 # Log the recording
@@ -144,11 +144,11 @@ class DebugEmotionDetector:
                 
                 # Update last record time
                 self.last_record_time = current_time
-                print(f"DEBUG: Updated last_record_time to: {self.last_record_time}")
-            else:
-                print(f"DEBUG: No frames in emotion window, skipping recording")
-        else:
-            print(f"DEBUG: Not enough time passed yet ({time_diff:.1f}s < 3.0s)")
+                #print(f"DEBUG: Updated last_record_time to: {self.last_record_time}")
+            #else:
+                #print(f"DEBUG: No frames in emotion window, skipping recording")
+        #else:
+            #print(f"DEBUG: Not enough time passed yet ({time_diff:.1f}s < 3.0s)")
         
     def log_emotion_scores(self):
         """Log emotion scores to emotionLog.txt"""
@@ -163,18 +163,18 @@ class DebugEmotionDetector:
         
         # Get the full path for debugging
         log_file_path = os.path.join(BASE_DIR, "emotionLog.txt")
-        print(f"DEBUG: Attempting to write to: {log_file_path}")
-        print(f"DEBUG: Log entry: {log_entry.strip()}")
+        #print(f"DEBUG: Attempting to write to: {log_file_path}")
+        #print(f"DEBUG: Log entry: {log_entry.strip()}")
         
         # Write to file
         try:
             with open(log_file_path, "a") as f:
                 f.write(log_entry)
-            print(f"DEBUG: Successfully wrote to emotionLog.txt")
+            #print(f"DEBUG: Successfully wrote to emotionLog.txt")
         except Exception as e:
             print(f"Error writing to emotionLog.txt: {e}")
-            print(f"DEBUG: Current working directory: {os.getcwd()}")
-            print(f"DEBUG: BASE_DIR: {BASE_DIR}")
+            #print(f"DEBUG: Current working directory: {os.getcwd()}")
+            #print(f"DEBUG: BASE_DIR: {BASE_DIR}")
         
     def update_emotion_window(self, emotion):
         """Add current emotion to the sliding window"""
