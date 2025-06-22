@@ -110,7 +110,7 @@ Below are raw data snapshots recorded in UTC:
 
 {joined}
 
-Please write a clear, compassionate summary that:
+Please write a clear, compassionate 1-page summary that:
 - Describes what the child viewed or did during these times.
 - Notes any emotional trends or concerns.
 - Offers simple, actionable suggestions for parents.
