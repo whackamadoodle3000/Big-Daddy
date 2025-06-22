@@ -58,7 +58,7 @@ from datetime import datetime, timezone
 # Load configuration via environment variables
 LOG_PATH = os.getenv("LOG_PATH", "format.jsonl")
 OUTPUT_DOC = os.getenv("OUTPUT_DOC", "parent_report.txt")
-GEMINI_API_KEY = "AIzaSyAwTF-bonFiKjb9a0IpggSkzxiW5FNxJ50"
+GEMINI_API_KEY = "AIzaSyCPczjS5PlqeGWQsUyDWGC_FL7Qf3Hr8As"
 
 if not GEMINI_API_KEY:
     raise RuntimeError("GEMINI_API_KEY environment variable is required.")
@@ -75,17 +75,32 @@ def build_prompt(snaps):
     lines = []
 
     for rec in snaps:
-        ts = rec["timestamp"]
-        # pick top 2 emotions
-        emo = rec.get("emotion", {})
-        top2 = sorted(emo.items(), key=lambda kv: -kv[1])[:2]
-        emo_text = ", ".join(f"{k}={v:.2f}" for k, v in top2)
+        # ts = rec["timestamp"]
+        # # pick top 2 emotions
+        # emo = rec.get("emotion", {})
+        # top2 = sorted(emo.items(), key=lambda kv: -kv[1])[:2]
+        # emo_text = ", ".join(f"{k}={v:.2f}" for k, v in top2)
 
-        # number of cached events
-        events = rec.get("chain_events", [])
-        count = len(events)
+        # # number of cached events
+        # events = rec.get("chain_events", [])
+        # count = len(events)
 
-        lines.append(f"At {ts}, emotions: {emo_text}; chain events: {count} items.")
+        # lines.append(f"At {ts}, emotions: {emo_text}; chain events: {count} items.")
+
+        ts        = rec["timestamp"]
+        url       = rec.get("current_url", "<none>")
+        category  = rec.get("site_category", "")
+        tsec      = rec.get("time_on_site", 0.0)
+        recmd     = rec.get("recommendation", "")
+        emo       = rec.get("emotion", {})
+        # top two emotions
+        top2      = sorted(emo.items(), key=lambda kv: -kv[1])[:2]
+        emo_text  = ", ".join(f"{k}={v:.2f}" for k,v in top2)
+
+        lines.append(
+            f"At {ts}, visited {url} (category: {category}) for {tsec:.1f}s; "
+            f"recommendation: {recmd}. Emotions: {emo_text}."
+        )
 
     joined = "\n".join(lines)
 
