@@ -1,15 +1,15 @@
 import cv2
 import mediapipe as mp
 import numpy as np
-import tkinter as tk
-from tkinter import ttk
-from PIL import Image, ImageTk
 import threading
 import time
 from deepface import DeepFace
 import os
 from datetime import datetime
 from collections import defaultdict, deque
+
+# Get the absolute path to the main project directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 class DebugEmotionDetector:
     def __init__(self):
@@ -38,95 +38,11 @@ class DebugEmotionDetector:
         # Emotion labels
         self.emotions = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral']
         
-        # Create GUI
-        self.setup_gui()
+        print("Emotion Detection System Initialized")
+        print("Starting camera and emotion detection...")
         
-    def setup_gui(self):
-        """Setup the main GUI window with debug information"""
-        self.root = tk.Tk()
-        self.root.title("Debug Emotion Detection System")
-        self.root.geometry("900x700")
-        self.root.configure(bg='#2c3e50')
-        
-        # Style configuration
-        style = ttk.Style()
-        style.theme_use('clam')
-        style.configure('Title.TLabel', font=('Arial', 16, 'bold'), foreground='white')
-        style.configure('Emotion.TLabel', font=('Arial', 14), foreground='#ecf0f1')
-        style.configure('Confidence.TLabel', font=('Arial', 12), foreground='#bdc3c7')
-        style.configure('Debug.TLabel', font=('Arial', 10), foreground='#e74c3c')
-        
-        # Main frame
-        main_frame = tk.Frame(self.root, bg='#2c3e50')
-        main_frame.pack(expand=True, fill='both', padx=20, pady=20)
-        
-        # Title
-        title_label = ttk.Label(main_frame, text="Debug Emotion Detection", style='Title.TLabel')
-        title_label.pack(pady=(0, 20))
-        
-        # Video frame
-        self.video_frame = tk.Frame(main_frame, bg='#34495e', relief='raised', bd=2)
-        self.video_frame.pack(pady=10)
-        
-        self.video_label = tk.Label(self.video_frame, bg='#34495e')
-        self.video_label.pack(padx=10, pady=10)
-        
-        # Debug information frame
-        debug_frame = tk.Frame(main_frame, bg='#2c3e50')
-        debug_frame.pack(pady=10, fill='x')
-        
-        # Debug info label
-        self.debug_label = ttk.Label(debug_frame, text="Debug: Initializing...", 
-                                    style='Debug.TLabel', wraplength=800)
-        self.debug_label.pack()
-        
-        # Emotion display frame
-        emotion_frame = tk.Frame(main_frame, bg='#2c3e50')
-        emotion_frame.pack(pady=10)
-        
-        # Current emotion
-        self.emotion_label = ttk.Label(emotion_frame, text="Emotion: No face detected", 
-                                      style='Emotion.TLabel')
-        self.emotion_label.pack()
-        
-        # Confidence
-        self.confidence_label = ttk.Label(emotion_frame, text="Confidence: 0%", 
-                                         style='Confidence.TLabel')
-        self.confidence_label.pack()
-        
-        # Window info display
-        self.window_label = ttk.Label(emotion_frame, text="Window: 0/3.0s", 
-                                     style='Confidence.TLabel')
-        self.window_label.pack()
-        
-        # Counter display
-        self.counter_label = ttk.Label(emotion_frame, text="Counter: 0/20", 
-                                      style='Confidence.TLabel')
-        self.counter_label.pack()
-        
-        # Control buttons
-        button_frame = tk.Frame(main_frame, bg='#2c3e50')
-        button_frame.pack(pady=20)
-        
-        self.start_button = tk.Button(button_frame, text="Start Camera", 
-                                     command=self.start_camera,
-                                     bg='#27ae60', fg='white', font=('Arial', 12, 'bold'),
-                                     relief='flat', padx=20, pady=10)
-        self.start_button.pack(side='left', padx=10)
-        
-        self.stop_button = tk.Button(button_frame, text="Stop Camera", 
-                                    command=self.stop_camera,
-                                    bg='#e74c3c', fg='white', font=('Arial', 12, 'bold'),
-                                    relief='flat', padx=20, pady=10, state='disabled')
-        self.stop_button.pack(side='left', padx=10)
-        
-        # Status bar
-        self.status_label = tk.Label(main_frame, text="Ready to start", 
-                                    bg='#34495e', fg='white', font=('Arial', 10))
-        self.status_label.pack(pady=10)
-        
-        # Bind window close event
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        # Start the camera automatically
+        self.start_camera()
         
     def start_camera(self):
         """Start the webcam and emotion detection"""
@@ -136,30 +52,20 @@ class DebugEmotionDetector:
                 raise Exception("Could not open webcam")
             
             self.is_running = True
-            self.start_button.config(state='disabled')
-            self.stop_button.config(state='normal')
-            self.status_label.config(text="Camera started - Detecting emotions...")
+            print("Camera started successfully - Detecting emotions...")
             
-            # Start video processing in a separate thread
-            self.video_thread = threading.Thread(target=self.process_video)
-            self.video_thread.daemon = True
-            self.video_thread.start()
+            # Start video processing in the main thread
+            self.process_video()
             
         except Exception as e:
-            self.status_label.config(text=f"Error: {str(e)}")
+            print(f"Error starting camera: {str(e)}")
             
     def stop_camera(self):
         """Stop the webcam and emotion detection"""
         self.is_running = False
         if self.cap:
             self.cap.release()
-        
-        self.start_button.config(state='normal')
-        self.stop_button.config(state='disabled')
-        self.status_label.config(text="Camera stopped")
-        
-        # Clear video display
-        self.video_label.config(image='')
+        print("Camera stopped")
         
     def calculate_emotion_score(self):
         """Calculate emotionScore based on weighted history"""
@@ -187,8 +93,14 @@ class DebugEmotionDetector:
         """Record emotion data every 3 seconds"""
         current_time = time.time()
         
+        # Debug: Print time difference
+        time_diff = current_time - self.last_record_time
+        print(f"DEBUG: Time since last record: {time_diff:.1f}s (need 3.0s)")
+        
         # Check if 3 seconds have passed
         if current_time - self.last_record_time >= 3.0:
+            print(f"DEBUG: 3 seconds passed! Recording emotion data...")
+            
             # Calculate emotion presence times for ALL emotions in the current window
             emotion_counts = defaultdict(int)
             total_frames = len(self.emotion_window)
@@ -207,6 +119,7 @@ class DebugEmotionDetector:
                 self.calculate_emotion_score()
                 
                 # Log to emotionLog.txt
+                print(f"DEBUG: Calling log_emotion_scores...")
                 self.log_emotion_scores()
                 
                 # Log the recording
@@ -231,7 +144,12 @@ class DebugEmotionDetector:
                 
                 # Update last record time
                 self.last_record_time = current_time
-                
+                print(f"DEBUG: Updated last_record_time to: {self.last_record_time}")
+            else:
+                print(f"DEBUG: No frames in emotion window, skipping recording")
+        else:
+            print(f"DEBUG: Not enough time passed yet ({time_diff:.1f}s < 3.0s)")
+        
     def log_emotion_scores(self):
         """Log emotion scores to emotionLog.txt"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -243,12 +161,20 @@ class DebugEmotionDetector:
             log_entry += f" {emotion}:{score:.1f}"
         log_entry += "\n"
         
+        # Get the full path for debugging
+        log_file_path = os.path.join(BASE_DIR, "emotionLog.txt")
+        print(f"DEBUG: Attempting to write to: {log_file_path}")
+        print(f"DEBUG: Log entry: {log_entry.strip()}")
+        
         # Write to file
         try:
-            with open("emotionLog.txt", "a") as f:
+            with open(log_file_path, "a") as f:
                 f.write(log_entry)
+            print(f"DEBUG: Successfully wrote to emotionLog.txt")
         except Exception as e:
             print(f"Error writing to emotionLog.txt: {e}")
+            print(f"DEBUG: Current working directory: {os.getcwd()}")
+            print(f"DEBUG: BASE_DIR: {BASE_DIR}")
         
     def update_emotion_window(self, emotion):
         """Add current emotion to the sliding window"""
@@ -287,7 +213,7 @@ class DebugEmotionDetector:
             ret, frame = self.cap.read()
             if not ret:
                 self.debug_info = "Failed to read frame from camera"
-                self.root.after(0, self.update_debug_display)
+                print("Failed to read frame from camera")
                 continue
                 
             frame_count += 1
@@ -322,7 +248,6 @@ class DebugEmotionDetector:
                         # Detect emotion using DeepFace
                         try:
                             self.debug_info = "Starting DeepFace analysis..."
-                            self.root.after(0, self.update_debug_display)
                             
                             emotion_result = DeepFace.analyze(face_region, 
                                                            actions=['emotion'], 
@@ -349,8 +274,7 @@ class DebugEmotionDetector:
                             
                             self.debug_info = f"Emotion: {emotion} ({confidence:.1%}) - Detection #{emotion_detection_count} - {window_text}"
                             
-                            # Update GUI labels
-                            self.root.after(0, lambda: self.update_emotion_display(window_text))
+                            # Print current emotion to console
                             
                         except Exception as e:
                             self.debug_info = f"DeepFace error: {str(e)}"
@@ -359,7 +283,7 @@ class DebugEmotionDetector:
                             self.update_emotion_window("Detection failed")
                             self.record_emotion_data()
                             window_text, _ = self.get_window_stats()
-                            self.root.after(0, lambda: self.update_emotion_display(window_text))
+                            print(f"Detection failed: {str(e)}")
                     else:
                         self.debug_info = "Face region is empty or too small"
                         self.current_emotion = "Face too small"
@@ -367,7 +291,7 @@ class DebugEmotionDetector:
                         self.update_emotion_window("Face too small")
                         self.record_emotion_data()
                         window_text, _ = self.get_window_stats()
-                        self.root.after(0, lambda: self.update_emotion_display(window_text))
+                        print("Face region is empty or too small")
             else:
                 self.current_emotion = "No face detected"
                 self.emotion_confidence = 0.0
@@ -375,48 +299,20 @@ class DebugEmotionDetector:
                 self.record_emotion_data()
                 window_text, _ = self.get_window_stats()
                 self.debug_info = f"No face detected in frame {frame_count}"
-                self.root.after(0, lambda: self.update_emotion_display(window_text))
-            
-            # Update debug display
-            self.root.after(0, self.update_debug_display)
-            
-            # Convert frame for GUI display
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_pil = Image.fromarray(frame_rgb)
-            
-            # Resize frame to fit GUI
-            display_width = 640
-            display_height = 480
-            frame_pil = frame_pil.resize((display_width, display_height), Image.Resampling.LANCZOS)
-            
-            frame_tk = ImageTk.PhotoImage(frame_pil)
-            
-            # Update video display
-            self.root.after(0, lambda: self.video_label.config(image=frame_tk))
-            self.root.after(0, lambda: setattr(self.video_label, 'image', frame_tk))
+                print(f"No face detected in frame {frame_count}")
             
             # Control frame rate
             time.sleep(0.1)  # ~10 FPS for better window analysis
-            
-    def update_emotion_display(self, window_text):
-        """Update emotion and confidence labels in GUI"""
-        self.emotion_label.config(text=f"Emotion: {self.current_emotion}")
-        self.confidence_label.config(text=f"Confidence: {self.emotion_confidence:.1%}")
-        self.window_label.config(text=window_text)
-        self.counter_label.config(text=f"Counter: {self.counter}/20")
-        
-    def update_debug_display(self):
-        """Update debug information in GUI"""
-        self.debug_label.config(text=f"Debug: {self.debug_info}")
-        
-    def on_closing(self):
-        """Handle window closing"""
-        self.stop_camera()
-        self.root.destroy()
         
     def run(self):
-        """Start the GUI application"""
-        self.root.mainloop()
+        """Start the emotion detection process"""
+        try:
+            # The process_video method runs in the main thread
+            # When it exits, we clean up
+            self.stop_camera()
+        except KeyboardInterrupt:
+            print("\nStopping emotion detection...")
+            self.stop_camera()
 
 def main():
     """Main function to run the debug emotion detector"""
@@ -424,6 +320,7 @@ def main():
     print("This version uses a 3-second sliding window approach.")
     print("Emotion data is recorded every 3 seconds in emotionCache.")
     print("EmotionScore is calculated with weighted history.")
+    print("Press Ctrl+C to stop the detection.")
     print()
     
     detector = DebugEmotionDetector()

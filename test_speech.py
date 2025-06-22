@@ -25,12 +25,20 @@ async def test_lmnt_direct():
         print("🧪 Testing LMNT SDK directly...")
         
         # Set API key
-        if not os.getenv('LMNT_API_KEY'):
-            os.environ['LMNT_API_KEY'] = "ak_GkxGopYg9FwhJaQkJ9huMC"
+        api_key = os.getenv('LMNT_API_KEY') or "ak_GkxGopYg9FwhJaQkJ9huMC"
         
-        async with Speech() as speech:
+        async with Speech(api_key=api_key) as speech:
             synthesis = await speech.synthesize('Hello! This is a direct LMNT test.', 'lily')
-            audio_data = synthesis['audio']
+            
+            # Handle different possible response formats
+            if hasattr(synthesis, 'audio'):
+                audio_data = synthesis.audio
+            elif isinstance(synthesis, dict) and 'audio' in synthesis:
+                audio_data = synthesis['audio']
+            else:
+                # Try to access as bytes directly
+                audio_data = synthesis
+            
             print(f"✅ Direct LMNT synthesis successful ({len(audio_data)} bytes)")
             
             # Save test file

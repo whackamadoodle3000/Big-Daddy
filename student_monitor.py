@@ -12,26 +12,33 @@ import threading
 import argparse
 from datetime import datetime
 
+# Import configuration
+from config import (
+    OPENAI_API_KEY, LMNT_API_KEY, BROWSER_INTERVAL, AI_INTERVAL,
+    HEADLESS_MODE, validate_config, get_config_summary
+)
+
 # Import our modules
 from browser_monitor_fixed import BrowserMonitor
 from ai_agent import SmartStudentAIAgent
 
 
 class SmartStudentMonitor:
-    def __init__(self, openai_api_key: str = None, headless: bool = False, lmnt_api_key: str = None):
+    def __init__(self, openai_api_key: str = None, headless: bool = None, lmnt_api_key: str = None):
         """Initialize the smart student monitoring system"""
-        self.openai_api_key = openai_api_key
-        self.lmnt_api_key = lmnt_api_key
-        self.headless = headless
+        # Use provided values or fall back to config
+        self.openai_api_key = openai_api_key or OPENAI_API_KEY
+        self.lmnt_api_key = lmnt_api_key or LMNT_API_KEY
+        self.headless = headless if headless is not None else HEADLESS_MODE
         self.running = False
         
         # Initialize components
         self.browser_monitor = None
         self.ai_agent = None
         
-        # Monitoring settings
-        self.browser_interval = 5  # Browser monitoring every 5 seconds
-        self.ai_interval = 15      # AI analysis every 15 seconds
+        # Monitoring settings from config
+        self.browser_interval = BROWSER_INTERVAL
+        self.ai_interval = AI_INTERVAL
         
     def initialize_components(self):
         """Initialize browser monitor and AI agent"""
@@ -256,28 +263,40 @@ def main():
     parser.add_argument("--headless", action="store_true", 
                        help="Run browser in headless mode")
     parser.add_argument("--api-key", 
-                       help="OpenAI API key (or set OPENAI_API_KEY environment variable)")
+                       help="OpenAI API key (or set in .env file)")
     parser.add_argument("--lmnt-key", 
                        help="LMNT API key for speech synthesis")
-    parser.add_argument("--browser-interval", type=int, default=5,
-                       help="Browser monitoring interval in seconds (default: 5)")
-    parser.add_argument("--ai-interval", type=int, default=15,
-                       help="AI analysis interval in seconds (default: 15)")
+    parser.add_argument("--browser-interval", type=int, default=None,
+                       help="Browser monitoring interval in seconds")
+    parser.add_argument("--ai-interval", type=int, default=None,
+                       help="AI analysis interval in seconds")
     parser.add_argument("--test", action="store_true",
                        help="Run AI test analysis only (no browser monitoring)")
+    parser.add_argument("--config", action="store_true",
+                       help="Show current configuration")
     
     args = parser.parse_args()
     
-    # Check for OpenAI API key
-    api_key = args.api_key or os.getenv("OPENAI_API_KEY")
-    if not api_key and not args.test:
-        print("❌ OpenAI API key is required!")
-        print("Set OPENAI_API_KEY environment variable or use --api-key argument")
-        print("Example: export OPENAI_API_KEY='your-api-key-here'")
+    # Show configuration if requested
+    if args.config:
+        print("📋 Current Configuration:")
+        print("=" * 30)
+        config_summary = get_config_summary()
+        for key, value in config_summary.items():
+            print(f"• {key}: {value}")
+        return
+    
+    # Validate configuration
+    if not args.test and not validate_config():
+        print("\n💡 To set up your API key:")
+        print("1. Create a .env file in the project directory")
+        print("2. Add: OPENAI_API_KEY=your-api-key-here")
+        print("3. Or use: --api-key your-api-key-here")
         sys.exit(1)
     
-    # LMNT API key (optional)
-    lmnt_key = args.lmnt_key or "ak_GkxGopYg9FwhJaQkJ9huMC"
+    # Use provided API keys or fall back to config
+    api_key = args.api_key or OPENAI_API_KEY
+    lmnt_key = args.lmnt_key or LMNT_API_KEY
     
     try:
         if args.test:

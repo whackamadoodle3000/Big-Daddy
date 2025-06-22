@@ -17,16 +17,22 @@ import platform
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Tuple
 import pandas as pd
-from langchain.llms import OpenAI
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage, SystemMessage
-from langchain.tools import DuckDuckGoSearchRun
+from langchain_community.llms import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_community.tools import DuckDuckGoSearchRun
 from langchain.agents import initialize_agent, AgentType, Tool
 from langchain.memory import ConversationBufferMemory
 import re
 from urllib.parse import urlparse
 from PIL import Image
 import pytesseract
+
+# Import configuration
+from config import (
+    OPENAI_API_KEY, LMNT_API_KEY, SPEECH_ENABLED, SPEECH_COOLDOWN,
+    DEFAULT_MODEL, FAST_MODEL, TEMPERATURE, MAX_TOKENS
+)
 
 # LMNT SDK import
 try:
@@ -46,14 +52,15 @@ except ImportError:
 
 class SmartStudentAIAgent:
     def __init__(self, openai_api_key: str = None, lmnt_api_key: str = None):
-        self.openai_api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
+        # Use provided API keys or fall back to config
+        self.openai_api_key = openai_api_key or OPENAI_API_KEY
         if not self.openai_api_key:
-            raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY environment variable or pass it to constructor.")
+            raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY in .env file or pass it to constructor.")
         
         # LMNT API for text-to-speech
-        self.lmnt_api_key = lmnt_api_key or "ak_GkxGopYg9FwhJaQkJ9huMC"
+        self.lmnt_api_key = lmnt_api_key or LMNT_API_KEY
         self.lmnt_voice = "daniel"  # Changed to male voice
-        self.speech_enabled = LMNT_AVAILABLE or platform.system().lower() == "darwin"  # Enable if LMNT available or on macOS (for 'say' fallback)
+        self.speech_enabled = SPEECH_ENABLED and (LMNT_AVAILABLE or platform.system().lower() == "darwin")
         
         # Initialize pygame for audio playback if available
         if PYGAME_AVAILABLE:
@@ -69,18 +76,18 @@ class SmartStudentAIAgent:
         
         # Initialize LLM with vision capabilities
         self.llm = ChatOpenAI(
-            temperature=0.3,  # Reduced for faster, more consistent responses
+            temperature=TEMPERATURE,
             openai_api_key=self.openai_api_key,
-            model_name="gpt-4o",
-            max_tokens=500,  # Reduced for faster responses
-            timeout=10  # Add timeout to prevent hanging
+            model_name=DEFAULT_MODEL,
+            max_tokens=MAX_TOKENS,
+            timeout=10
         )
         
         # Faster LLM for quick decisions
         self.fast_llm = ChatOpenAI(
             temperature=0.1,
             openai_api_key=self.openai_api_key,
-            model_name="gpt-3.5-turbo",
+            model_name=FAST_MODEL,
             max_tokens=200,
             timeout=5
         )
@@ -89,8 +96,8 @@ class SmartStudentAIAgent:
         self.text_llm = ChatOpenAI(
             temperature=0.7,
             openai_api_key=self.openai_api_key,
-            model_name="gpt-3.5-turbo",
-            max_tokens=300,  # Reduced for faster responses
+            model_name=FAST_MODEL,
+            max_tokens=300,
             timeout=8
         )
         
@@ -163,7 +170,7 @@ class SmartStudentAIAgent:
         
         # Speech feedback settings
         self.last_speech_time = None
-        self.speech_cooldown = 120  # 2 minutes between speech feedback
+        self.speech_cooldown = SPEECH_COOLDOWN
         self.speech_count = 0
         
     def encode_image_for_vision(self, image_path: str) -> str:
@@ -916,9 +923,19 @@ class SmartStudentAIAgent:
             if not os.getenv('LMNT_API_KEY'):
                 os.environ['LMNT_API_KEY'] = self.lmnt_api_key
             
-            async with Speech() as speech:
+            # Use the correct LMNT API pattern based on working example
+            async with Speech(api_key=self.lmnt_api_key) as speech:
                 synthesis = await speech.synthesize(text, self.lmnt_voice)
-                audio_data = synthesis['audio']
+                
+                # Handle different possible response formats
+                if hasattr(synthesis, 'audio'):
+                    audio_data = synthesis.audio
+                elif isinstance(synthesis, dict) and 'audio' in synthesis:
+                    audio_data = synthesis['audio']
+                else:
+                    # Try to access as bytes directly
+                    audio_data = synthesis
+                
                 print(f"✅ Speech synthesized successfully ({len(audio_data)} bytes)")
                 return audio_data
                 
