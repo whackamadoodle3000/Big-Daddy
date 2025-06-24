@@ -147,7 +147,9 @@ class SmartStudentMonitor:
                                 negative_emotions = emotions.get('anger', 0) + emotions.get('sad', 0) + emotions.get('disgust', 0)
 
                                 emotion_triggered = False
-                                if happy > 1000 and is_educational:
+                                if happy > 500 and negative_emotions > 500:
+                                    emotion_triggered = False
+                                elif happy > 500 and is_educational:
                                     analysis['recommendation'] = 'encourage'
                                     analysis['message'] = self.ai_agent.generate_emotion_based_message(emotions, 'encourage', 'educational', recent_activity)
                                     analysis['reasoning'] = "High happiness detected while on an educational page."
